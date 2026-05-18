@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Generador de dragones</title>
+
+  <style>
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+
+    #contenedor_canvas {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+      /*width: 100%;
+      height: 100%;*/
+      background: black;
+    }
+
+    #panelControles {
+      position: absolute;
+      top: 0;
+      left: 0;
+
+      height: 100%;
+      width: 260px;
+
+      background: rgba(0, 0, 0, 0.27);
+
+      z-index: 10;
+
+      transition: transform 0.3s ease;
+
+      display: flex;
+      flex-direction: row;
+    }
+
+    #panelControles.oculto {
+      transform: translateX(-220px);
+    }
+
+    #controles {
+      flex: 1;
+
+      padding: 20px;
+
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      color: white;
+    }
+
+    #controles h2 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 20px;
+    }
+
+    #controles label {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 14px;
+    }
+
+    #controles input {
+      width: 100%;
+    }
+
+    #togglePanel {
+      width: 40px;
+      height: 40px;
+
+      margin-top: 10px;
+
+      border: none;
+      cursor: pointer;
+
+      background: rgba(255,255,255,0.12);
+      color: white;
+
+      font-size: 24px;
+      font-weight: bold;
+
+      border-radius: 0 10px 10px 0;
+
+      transition: background 0.2s;
+    }
+
+    #togglePanel:hover {
+      background: rgba(255,255,255,0.22);
+    }
+
+    button#redibujar {
+      padding: 10px;
+
+      border: none;
+      border-radius: 8px;
+
+      background: #4caf50;
+      color: white;
+
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button#redibujar:hover {
+      background: #43a047;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<div id="contenedor_canvas">
+
+  <canvas id="fractalCanvas"></canvas>
+
+  <!-- PANEL -->
+  <div id="panelControles">
+
+    <!-- CONTROLES -->
+    <div id="controles">
+
+      <h2>Controles</h2>
+
+      <label>
+        Background color
+        <input type="color" id="bgColor" value="#000000">
+      </label>
+      <label>
+        Line color
+        <input type="color" id="lineColor" value="#ffffff">
+      </label>
+      <label>
+        Iterations
+        <input type="range" id="iterationCuantity" min="1" max="20" value="9">
+      </label>
+      <label>
+        Line lenght
+        <input type="range" id="lineLength" min="2" max="80" value="12">
+      </label>
+      <label>
+        Line width
+        <input type="range" id="lineWidth" min="1" max="5" value="2">
+      </label>
+      <label>
+        Animation
+        <input type="checkbox" id="animar" checked>
+      </label>
+      <label>
+        Animation speed
+        <input type="range" id="speed" min="1" max="200" value="10">
+      </label>
+      <button id="redibujar">
+        Remake dragon
+      </button>
+
+    </div>
+
+    <!-- FLECHA -->
+    <button id="togglePanel">
+      <
+    </button>
+
+  </div>
+
+</div>
+
+<script src="fractal_dragon.js"></script>
+<script>
+
+  const canvas = document.getElementById("fractalCanvas");
+  const ctx = canvas.getContext("2d");
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  resizeCanvas();
+
+  window.addEventListener("resize", () => {
+    resizeCanvas();
+    generarFractal();
+  });
+
+  const interationInput = document.getElementById("iterationCuantity");
+  const bgColorInput = document.getElementById("bgColor");
+  const lineColorInput = document.getElementById("lineColor");
+  const lineLengthInput = document.getElementById("lineLength");
+  const lineWidthInput = document.getElementById("lineWidth");
+  const speedInput = document.getElementById("speed");
+  const animarCheck = document.getElementById("animar");
+
+  const btnRedibujar = document.getElementById("redibujar");
+
+  
+  //PANEL
+  const panel = document.getElementById("panelControles");
+  const toggleBtn = document.getElementById("togglePanel");
+
+  let oculto = false;
+
+  toggleBtn.addEventListener("click", () => {
+    oculto = !oculto;
+    panel.classList.toggle("oculto");
+    toggleBtn.innerHTML = oculto ? ">" : "<";
+  });
+
+  //LOGICA CENTRO DRAGGEABLE (no anda)
+  let centro = new Punto(
+    canvas.width / 2,
+    canvas.height / 2
+  );
+  console.log(
+    centro.get_x(),
+    centro.get_y()
+  );
+  // Estado drag
+  let dragging = false;
+
+  const radioCentro = 10;
+
+
+function dibujarCentro() {
+
+  ctx.beginPath();
+  ctx.moveTo(centro.get_x(), centro.get_y());
+  ctx.arc(
+    centro.get_x(),
+    centro.get_y(),
+    radioCentro,
+    0,
+    Math.PI * 2
+  );
+
+  ctx.fillStyle = "red";
+  ctx.fill();
+}
+
+canvas.addEventListener("mousedown", (e) => {
+
+  const rect = canvas.getBoundingClientRect();
+
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  const dx = mouseX - centro.get_x();
+  const dy = mouseY - centro.get_y();
+
+  const distancia = Math.sqrt(dx * dx + dy * dy);
+
+  if (distancia <= radioCentro) {
+    dragging = true;
+  }
+});
+
+canvas.addEventListener("mousemove", (e) => {
+
+  if (!dragging) return;
+
+  const rect = canvas.getBoundingClientRect();
+
+  centro.set_x(e.clientX - rect.left);
+  centro.set_y(e.clientY - rect.top);
+
+  generarFractal();
+});
+
+canvas.addEventListener("mouseup", () => {
+  dragging = false;
+});
+
+canvas.addEventListener("mouseleave", () => {
+  dragging = false;
+});
+
+
+  function generarFractal() {
+
+    const iteraciones = parseInt(interationInput.value);
+    const bgColor = bgColorInput.value;
+    const color = lineColorInput.value;
+    const largo_trazo = parseInt(lineLengthInput.value);
+    const ancho_trazo = parseInt(lineWidthInput.value);
+    const velocidad = parseInt(speedInput.value);
+
+    canvas.style.background = bgColor;
+
+    cancelAnimationFrame(animationId);
+
+    limpiarCanvas(ctx, canvas);
+
+/*
+    const centros = obtenerCentros(canvas, 1, 1);
+    dibujarCentros(centros);
+*/
+    dibujarCentro();
+
+    if (animarCheck.checked)
+      dibujar_dragon(centro,canvas,ctx,iteraciones,largo_trazo,ancho_trazo,velocidad,color);
+    else
+      imprimir_dragon(centro, canvas,ctx,iteraciones,largo_trazo,ancho_trazo,color);
+  }
+
+  function changeCanvasColor(event){
+    canvas.style.background = event.target.value;
+  }
+
+  btnRedibujar.addEventListener("click", generarFractal);
+  bgColorInput.addEventListener("input", changeCanvasColor);
+  lineColorInput.addEventListener("input", generarFractal);
+
+  generarFractal();
+
+</script>
+
+</body>
+</html>
