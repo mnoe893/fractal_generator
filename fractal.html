@@ -5,7 +5,6 @@
   <title>Generador de dragones</title>
 
   <style>
-
     body {
       margin: 0;
       overflow: hidden;
@@ -159,7 +158,7 @@
       </label>
       <label>
         Animation
-        <input type="checkbox" id="animar" checked>
+        <input type="checkbox" id="animar" unchecked>
       </label>
       <label>
         Animation speed
@@ -221,15 +220,8 @@
     toggleBtn.innerHTML = oculto ? ">" : "<";
   });
 
-  //LOGICA CENTRO DRAGGEABLE (no anda)
-  let centro = new Punto(
-    canvas.width / 2,
-    canvas.height / 2
-  );
-  console.log(
-    centro.get_x(),
-    centro.get_y()
-  );
+  //LOGICA CENTRO DRAGGEABLE
+let centro = new Punto(0, 0);
   // Estado drag
   let dragging = false;
 
@@ -238,26 +230,55 @@
 
 function dibujarCentro() {
 
-  ctx.beginPath();
-  ctx.moveTo(centro.get_x(), centro.get_y());
-  ctx.arc(
-    centro.get_x(),
-    centro.get_y(),
-    radioCentro,
-    0,
-    Math.PI * 2
-  );
+    ctx.save();
 
-  ctx.fillStyle = "red";
-  ctx.fill();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+
+    ctx.beginPath();
+    ctx.arc(
+        centro.get_x(),
+        centro.get_y(),
+        radioCentro,
+        0,
+        Math.PI * 2
+    );
+    ctx.fillStyle = "red";
+    ctx.fill();
+
+    ctx.restore();
+
+    return centro;
+}
+function generarFractal() {
+  // Obtain parameters set by user
+  const iteraciones = parseInt(interationInput.value);
+  const bgColor = bgColorInput.value;
+  const color = lineColorInput.value;
+  const largo_trazo = parseInt(lineLengthInput.value);
+  const ancho_trazo = parseInt(lineWidthInput.value);
+  const velocidad = parseInt(speedInput.value);
+
+  canvas.style.background = bgColor; // Set background colour
+  cancelAnimationFrame(animationId); // Stop possible animation process
+  limpiarCanvas(ctx, canvas); // Clean canvas from previous strokes
+
+  centro = dibujarCentro(); // Draw movable center
+
+  if (animarCheck.checked)
+    dibujar_dragon(centro,canvas,ctx,iteraciones,largo_trazo,ancho_trazo,velocidad,color);
+  else
+    imprimir_dragon(centro, canvas,ctx,iteraciones,largo_trazo,ancho_trazo,color);
 }
 
+function changeCanvasColor(event){
+  canvas.style.background = event.target.value;
+}
 canvas.addEventListener("mousedown", (e) => {
 
   const rect = canvas.getBoundingClientRect();
 
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
+  const mouseX = e.clientX - rect.left - canvas.width / 2;
+  const mouseY = e.clientY - rect.top  - canvas.height / 2;
 
   const dx = mouseX - centro.get_x();
   const dy = mouseY - centro.get_y();
@@ -275,9 +296,8 @@ canvas.addEventListener("mousemove", (e) => {
 
   const rect = canvas.getBoundingClientRect();
 
-  centro.set_x(e.clientX - rect.left);
-  centro.set_y(e.clientY - rect.top);
-
+  centro.set_x(e.clientX - rect.left - canvas.width / 2);
+  centro.set_y(e.clientY - rect.top  - canvas.height / 2);
   generarFractal();
 });
 
@@ -290,42 +310,14 @@ canvas.addEventListener("mouseleave", () => {
 });
 
 
-  function generarFractal() {
+btnRedibujar.addEventListener("click", generarFractal);
+bgColorInput.addEventListener("input", changeCanvasColor);
+lineColorInput.addEventListener("input", generarFractal);
+interationInput.addEventListener("input", generarFractal);
+lineLengthInput.addEventListener("input", generarFractal);
+lineWidthInput.addEventListener("input", generarFractal);
 
-    const iteraciones = parseInt(interationInput.value);
-    const bgColor = bgColorInput.value;
-    const color = lineColorInput.value;
-    const largo_trazo = parseInt(lineLengthInput.value);
-    const ancho_trazo = parseInt(lineWidthInput.value);
-    const velocidad = parseInt(speedInput.value);
-
-    canvas.style.background = bgColor;
-
-    cancelAnimationFrame(animationId);
-
-    limpiarCanvas(ctx, canvas);
-
-/*
-    const centros = obtenerCentros(canvas, 1, 1);
-    dibujarCentros(centros);
-*/
-    dibujarCentro();
-
-    if (animarCheck.checked)
-      dibujar_dragon(centro,canvas,ctx,iteraciones,largo_trazo,ancho_trazo,velocidad,color);
-    else
-      imprimir_dragon(centro, canvas,ctx,iteraciones,largo_trazo,ancho_trazo,color);
-  }
-
-  function changeCanvasColor(event){
-    canvas.style.background = event.target.value;
-  }
-
-  btnRedibujar.addEventListener("click", generarFractal);
-  bgColorInput.addEventListener("input", changeCanvasColor);
-  lineColorInput.addEventListener("input", generarFractal);
-
-  generarFractal();
+generarFractal();
 
 </script>
 

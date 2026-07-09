@@ -45,23 +45,6 @@ function inicializar(ctx, canvas, largo_trazo) {
   return puntos;
 }
 
-// Me otorga un punto randomizado dentro del canvas
-function origen_rand(canvas){
-  let centro_x = Math.floor(Math.random() * canvas.width/2*0.8) - canvas.width/2*0.8;
-  let centro_y = Math.floor(Math.random() * canvas.height/2*0.8) - canvas.height/2*0.8;
-  return new Punto(centro_x, centro_y);
-}
-
-// Itera un fractal entre 4 y 8 veces
-function iterar_rand(puntos){
-    let cant_iteraciones = Math.floor(Math.random() * 8) + 3;
-    while(cant_iteraciones > 0){
-        puntos = iterar_fractal(puntos);
-        cant_iteraciones--;
-    }
-    return puntos;
-}
-
 // Itera mi fractal (copia, rota, concatena)
 function iterar_fractal(puntos){
   let nuevo_trazo = puntos.map(p => p.copy()); // Copio array de trazos
@@ -98,37 +81,84 @@ function print_puntos(puntos){
   console.log(text);
 }
 
-function trasladar_dragon(puntos, nuevo_origen){
+// Dibujo inmediatamente la figura, sin animacion
+function imprimirTrazo(ctx, puntos, color, strokeWidth){
+    for(let i = 0; i < puntos.length-1; i++){
+        let p1 = puntos[i];
+        let p2 = puntos[i + 1];
+        ctx.beginPath();
+        ctx.moveTo(p1.get_x(), p1.get_y());
+        ctx.lineTo(p2.get_x(), p2.get_y());
+        ctx.strokeStyle = color;
+        ctx.lineWidth = strokeWidth;
+        ctx.stroke();
+    }
+}
+function trasladar_arr(puntos, dx, dy){
+    for(const p of puntos){
+        p.set_x(p.get_x() + dx);
+        p.set_y(p.get_y() + dy);
+    }
+}
+// Crea el array de puntos
+function crear_dragon(canvas,ctx,iteraciones,largo_trazo,centro){
 
-  // Punto actual origen del fractal
-  const origen = puntos[0];
+    let arr = inicializar(ctx, canvas, largo_trazo);
+    // Generar iteraciones
+    for(let i = 0; i < iteraciones; i++){
+      arr = iterar_fractal(arr);
+    }
 
-  // Diferencia necesaria
-  const dx = nuevo_origen.get_x() - origen.get_x();
-  const dy = nuevo_origen.get_y() - origen.get_y();
-
-  // Trasladar TODOS los puntos
-  puntos.forEach(p => {
-    p.set_x(p.get_x() + dx);
-    p.set_y(p.get_y() + dy);
-
-  });
+    trasladar_arr(arr, centro.get_x(), centro.get_y());
+    return arr;
+}
+function dibujar_dragon(centro,canvas,ctx,iteraciones,largo_trazo,ancho_trazo,velocidad,color) {
+    let arr = crear_dragon(canvas,ctx,iteraciones,largo_trazo,centro);
+    animarTrazo(ctx, arr, color, ancho_trazo, velocidad);
+}
+function imprimir_dragon(centro,canvas,ctx,iteraciones,largo_trazo,ancho_trazo,color) {
+    let arr = crear_dragon(canvas,ctx,iteraciones,largo_trazo,centro);
+    imprimirTrazo(ctx, arr, color, ancho_trazo);
 }
 
+
+// Elimina los puntos que esten muy lejos del canvas para evitar que un fractal
+// tarde mucho tiempo en llegar a ser visible
+function acotar_dragon_a_canvas(puntos, ancho, alto){
+  //x_min = -ancho/2;
+  x_max = ancho/2 * 1.1; //Le doy un margen
+
+  //y_min = -alto/2;
+  y_max = alto/2 * 1.1;
+
+  for(let i = 0; i < puntos.length; i++){
+    console.log("ciclo: "+i);
+    if(Math.abs(puntos[i].get_x()) > x_max || Math.abs(puntos[i].get_y()) > y_max){
+      puntos.splice(i,1);
+      console.log("eliminado punto"+i);
+    }
+      
+  }
+  return puntos;
+}
+
+function limpiarCanvas(ctx, canvas) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
 let animationId = null;
 
 function animarTrazo(ctx, puntos, color, strokeWidth, velocidad = 2) {
-
   // Cancelar animación previa
   if (animationId) {
     cancelAnimationFrame(animationId);
   }
 
   if (puntos.length < 2) return;
-
+  
   let i = 0;
   let t = 0;
-
+  acotar_dragon_a_canvas(puntos, canvas.width, canvas.height);
   function animarSegmento() {
 
     if (i >= puntos.length - 1) return;
@@ -170,20 +200,26 @@ function animarTrazo(ctx, puntos, color, strokeWidth, velocidad = 2) {
   animarSegmento();
 }
 
-// Dibujo inmediatamente la figura, sin animacion
-function imprimirTrazo(ctx, puntos, color, strokeWidth){
-    for(let i = 0; i < puntos.length-1; i++){
-        let p1 = puntos[i];
-        let p2 = puntos[i + 1];
-        ctx.beginPath();
-        ctx.moveTo(p1.get_x(), p1.get_y());
-        ctx.lineTo(p2.get_x(), p2.get_y());
-        ctx.strokeStyle = color;
-        ctx.lineWidth = strokeWidth;
-        ctx.stroke();
-    }
+/*
+FUNCIONES RAND Y AUTOGENERACION
+*/
+
+// Me otorga un punto randomizado dentro del canvas
+function origen_rand(canvas){
+  let centro_x = Math.floor(Math.random() * canvas.width/2*0.8) - canvas.width/2*0.8;
+  let centro_y = Math.floor(Math.random() * canvas.height/2*0.8) - canvas.height/2*0.8;
+  return new Punto(centro_x, centro_y);
 }
 
+// Itera un fractal entre 4 y 8 veces
+function iterar_rand(puntos){
+    let cant_iteraciones = Math.floor(Math.random() * 8) + 3;
+    while(cant_iteraciones > 0){
+        puntos = iterar_fractal(puntos);
+        cant_iteraciones--;
+    }
+    return puntos;
+}
 // Divide mi canvas en varias secciones y retorna el punto central a cada region
 function obtenerCentros(canvas, cant_filas, cant_columnas) {
   ctx.translate(canvas.width / 2, canvas.height / 2); //Coloco el origen en el centro del canvas
@@ -210,42 +246,6 @@ function dibujarCentros(centros){
       ctx.fill();
     });
 }
-
-function dibujar_dragon(centro,canvas,ctx,iteraciones,largo_trazo,ancho_trazo,velocidad,color) {
-
-    let arr = inicializar(ctx, canvas, largo_trazo);
-    // Generar iteraciones
-    for(let i = 0; i < iteraciones; i++){
-      arr = iterar_fractal(arr);
-    }
-
-    // Cambiar origen
-    //cambiar_origen_arr(arr, centro.copy());
-
-    // Limitar al canvas
-    acotar_dragon_a_canvas(arr, canvas.width, canvas.height);
-
-    // Dibujar fractal
-    animarTrazo(ctx, arr, color, ancho_trazo, velocidad);
-}
-function imprimir_dragon(centro,canvas,ctx,iteraciones,largo_trazo,ancho_trazo,color) {
-
-    let arr = inicializar(ctx, canvas, largo_trazo);
-    // Generar iteraciones
-    for(let i = 0; i < iteraciones; i++){
-      arr = iterar_fractal(arr);
-    }
-
-    // Cambiar origen
-    //cambiar_origen_arr(arr, centro.copy());
-
-    // Limitar al canvas
-    acotar_dragon_a_canvas(arr, canvas.width, canvas.height);
-
-    // Dibujar fractal
-    imprimirTrazo(ctx, arr, color, ancho_trazo);
-}
-
 // Genera la cantidad y cualidad especificada de fractales de dragon
   /*
   Centros: puntos finales para los fractales
@@ -276,30 +276,6 @@ function randomizar_dragones(centros, canvas, ctx, largo_trazo, ancho_trazo, vel
         animarTrazo(ctx, arr, color_selec, ancho_trazo, velocidad);
     });
 }
-// Elimina los puntos que esten muy lejos del canvas para evitar que un fractal
-// tarde mucho tiempo en llegar a ser visible
-function acotar_dragon_a_canvas(puntos, ancho, alto){
-  //x_min = -ancho/2;
-  x_max = ancho/2 * 1.1; //Le doy un margen
-
-  //y_min = -alto/2;
-  y_max = alto/2 * 1.1;
-
-  for(let i = 0; i < puntos.length; i++){
-    if(Math.abs(puntos[i].get_x()) > x_max || Math.abs(puntos[i].get_y()) > y_max){
-      puntos = puntos.slice(i,1);
-      console.log("eliminado punto");
-    }
-      
-  }
-  return puntos;
-}
-
-function limpiarCanvas(ctx, canvas) {
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
-
 function fadeAway(){
     let alpha = 1.0;
     ctx.globalAlpha = alpha; // Opacidad 100%
