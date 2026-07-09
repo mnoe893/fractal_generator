@@ -35,18 +35,18 @@
       height: 100%;
       width: 260px;
 
-      background: rgba(0, 0, 0, 0.27);
+      background: rgba(0, 0, 0, 0.409);
 
       z-index: 10;
 
       transition: transform 0.3s ease;
-
       display: flex;
       flex-direction: row;
     }
 
     #panelControles.oculto {
       transform: translateX(-220px);
+      background: rgba(0, 0, 0, 0);
     }
 
     #controles {
@@ -87,7 +87,7 @@
       border: none;
       cursor: pointer;
 
-      background: rgba(255,255,255,0.12);
+      background: rgba(255, 255, 255, 0);
       color: white;
 
       font-size: 24px;
@@ -97,22 +97,22 @@
 
       transition: background 0.2s;
     }
-
+/*
     #togglePanel:hover {
       background: rgba(255,255,255,0.22);
-    }
+    }*/
 
     button{
       padding: 10px;
       border: none;
       border-radius: 8px;
-      background: #4caf50;
+      background: #3b3b3b;
       color: white;
       cursor: pointer;
       font-weight: bold;
     }
     button:hover {
-      background: #43a047;
+      background: #676767;
     }
 
   </style>
@@ -130,7 +130,7 @@
     <!-- CONTROLES -->
     <div id="controles">
 
-      <!-- <h2>Controles</h2> -->
+      <!-- <h2>Controls</h2> -->
 
       <label>
         Background color
@@ -308,15 +308,19 @@ canvas.addEventListener("mouseleave", () => {
   dragging = false;
 });
 
-bgColorInput.addEventListener("input", changeCanvasColor);
+bgColorInput.addEventListener("input", (e) => {
+    canvas.style.background = e.target.value;
+    document.getElementById("togglePanel").style.color =
+        parseInt(e.target.value.substring(1), 16) > 0x777777 ? "black" : "white"; //changes > toggle from white to black depending on the bg colour
+});
 
 btnanimate.addEventListener("click", () => generarFractal(1));
 btncancel.addEventListener("click", () => generarFractal(0));
 
-lineColorInput.addEventListener("input", () => generarFractal(0));
 interationInput.addEventListener("input", () => generarFractal(0));
 lineLengthInput.addEventListener("input", () => generarFractal(0));
 lineWidthInput.addEventListener("input", () => generarFractal(0));
+lineColorInput.addEventListener("input", () => generarFractal(0));
 
 generarFractal(1); // When loading the page it defaults to animate
 
