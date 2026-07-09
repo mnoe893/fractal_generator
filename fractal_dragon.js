@@ -126,10 +126,10 @@ function imprimir_dragon(centro,canvas,ctx,iteraciones,largo_trazo,ancho_trazo,c
 // tarde mucho tiempo en llegar a ser visible
 function acotar_dragon_a_canvas(puntos, ancho, alto){
   //x_min = -ancho/2;
-  x_max = ancho/2 * 1.1; //Le doy un margen
+  x_max = ancho/2 * 1.09; //Le doy un margen
 
   //y_min = -alto/2;
-  y_max = alto/2 * 1.1;
+  y_max = alto/2 * 1.09;
 
   for(let i = 0; i < puntos.length; i++){
     console.log("ciclo: "+i);
@@ -158,6 +158,7 @@ function animarTrazo(ctx, puntos, color, strokeWidth, velocidad = 2) {
   
   let i = 0;
   let t = 0;
+  // Elimina puntos lejanos a la pantalla para evitar que no se visualice la animacion
   acotar_dragon_a_canvas(puntos, canvas.width, canvas.height);
   function animarSegmento() {
 

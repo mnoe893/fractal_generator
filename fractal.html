@@ -102,20 +102,16 @@
       background: rgba(255,255,255,0.22);
     }
 
-    button#redibujar {
+    button{
       padding: 10px;
-
       border: none;
       border-radius: 8px;
-
       background: #4caf50;
       color: white;
-
       cursor: pointer;
       font-weight: bold;
     }
-
-    button#redibujar:hover {
+    button:hover {
       background: #43a047;
     }
 
@@ -134,7 +130,7 @@
     <!-- CONTROLES -->
     <div id="controles">
 
-      <h2>Controles</h2>
+      <!-- <h2>Controles</h2> -->
 
       <label>
         Background color
@@ -154,19 +150,22 @@
       </label>
       <label>
         Line width
-        <input type="range" id="lineWidth" min="1" max="5" value="2">
+        <input type="range" id="lineWidth" min="0.3" max="5" value="2">
       </label>
-      <label>
-        Animation
-        <input type="checkbox" id="animar" unchecked>
-      </label>
+      <br>
       <label>
         Animation speed
-        <input type="range" id="speed" min="1" max="200" value="10">
+        <input type="range" id="speed" min="1" max="40" value="10">
       </label>
-      <button id="redibujar">
-        Remake dragon
-      </button>
+      <div>
+        <button id="animate" style="width: 40%">
+          &#9654;
+        </button>
+        <button id="cancel_animation" style="width: 40%">
+          ✖
+        </button>
+      </div>
+
 
     </div>
 
@@ -202,10 +201,10 @@
   const lineColorInput = document.getElementById("lineColor");
   const lineLengthInput = document.getElementById("lineLength");
   const lineWidthInput = document.getElementById("lineWidth");
-  const speedInput = document.getElementById("speed");
-  const animarCheck = document.getElementById("animar");
 
-  const btnRedibujar = document.getElementById("redibujar");
+  const speedInput = document.getElementById("speed");
+  const btnanimate = document.getElementById("animate");
+  const btncancel = document.getElementById("cancel_animation");
 
   
   //PANEL
@@ -249,7 +248,7 @@ function dibujarCentro() {
 
     return centro;
 }
-function generarFractal() {
+function generarFractal(animar=0) {
   // Obtain parameters set by user
   const iteraciones = parseInt(interationInput.value);
   const bgColor = bgColorInput.value;
@@ -264,10 +263,10 @@ function generarFractal() {
 
   centro = dibujarCentro(); // Draw movable center
 
-  if (animarCheck.checked)
-    dibujar_dragon(centro,canvas,ctx,iteraciones,largo_trazo,ancho_trazo,velocidad,color);
-  else
+  if (animar == 0)
     imprimir_dragon(centro, canvas,ctx,iteraciones,largo_trazo,ancho_trazo,color);
+  else if(animar == 1)
+    dibujar_dragon(centro,canvas,ctx,iteraciones,largo_trazo,ancho_trazo,velocidad,color);
 }
 
 function changeCanvasColor(event){
@@ -298,7 +297,7 @@ canvas.addEventListener("mousemove", (e) => {
 
   centro.set_x(e.clientX - rect.left - canvas.width / 2);
   centro.set_y(e.clientY - rect.top  - canvas.height / 2);
-  generarFractal();
+  generarFractal(0);
 });
 
 canvas.addEventListener("mouseup", () => {
@@ -309,15 +308,17 @@ canvas.addEventListener("mouseleave", () => {
   dragging = false;
 });
 
-
-btnRedibujar.addEventListener("click", generarFractal);
 bgColorInput.addEventListener("input", changeCanvasColor);
-lineColorInput.addEventListener("input", generarFractal);
-interationInput.addEventListener("input", generarFractal);
-lineLengthInput.addEventListener("input", generarFractal);
-lineWidthInput.addEventListener("input", generarFractal);
 
-generarFractal();
+btnanimate.addEventListener("click", () => generarFractal(1));
+btncancel.addEventListener("click", () => generarFractal(0));
+
+lineColorInput.addEventListener("input", () => generarFractal(0));
+interationInput.addEventListener("input", () => generarFractal(0));
+lineLengthInput.addEventListener("input", () => generarFractal(0));
+lineWidthInput.addEventListener("input", () => generarFractal(0));
+
+generarFractal(1); // When loading the page it defaults to animate
 
 </script>
 
