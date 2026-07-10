@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Generador de dragones</title>
+  <title>Dragon generator</title>
 
   <style>
     body {
@@ -155,7 +155,7 @@
       <br>
       <label>
         Animation speed
-        <input type="range" id="speed" min="1" max="40" value="10">
+        <input type="range" id="speed" min="1" max="40" value="20">
       </label>
       <div>
         <button id="animate" style="width: 40%">
@@ -164,6 +164,10 @@
         <button id="cancel_animation" style="width: 40%">
           ✖
         </button>
+        <button id="rotate" style="width: 40%">
+          &#x21BB;
+        </button>
+        
       </div>
 
 
@@ -205,7 +209,7 @@
   const speedInput = document.getElementById("speed");
   const btnanimate = document.getElementById("animate");
   const btncancel = document.getElementById("cancel_animation");
-
+  const btnrotate = document.getElementById("rotate");
   
   //PANEL
   const panel = document.getElementById("panelControles");
@@ -219,59 +223,113 @@
     toggleBtn.innerHTML = oculto ? ">" : "<";
   });
 
-  //LOGICA CENTRO DRAGGEABLE
-let centro = new Punto(0, 0);
-  // Estado drag
+/*DAGGABLE CENTER VARIABLES*/
+  let center = new Punto(0, 0);
   let dragging = false;
+  const radiocenter = 10;
 
-  const radioCentro = 10;
+/*FRACTAL POINTS ARRAY*/
+let iterations = parseInt(interationInput.value);
+let bgColor = bgColorInput.value;
+let color = lineColorInput.value;
+let line_lenght = parseInt(lineLengthInput.value);
+let line_width = parseInt(lineWidthInput.value);
+let speed = parseInt(speedInput.value);
 
+let fractal = crear_dragon(canvas,ctx,iterations,line_lenght,center);
 
-function dibujarCentro() {
+/*Array has to be regenerated when line lenght or iterations changes*/
+/*with line lenght one could reposition all the dots instead of regenerating the array
+  but I chose not to*/
+function make_fractal(){
+  iterations = parseInt(interationInput.value);
+  line_lenght = parseInt(lineLengthInput.value);
 
+  cancelAnimationFrame(animationId); // Stop possible animation process
+  limpiarCanvas(ctx, canvas); // Clean canvas from previous strokes
+
+  center = draw_center(); // Draw center
+
+  fractal = crear_dragon(canvas,ctx,iterations,line_lenght,center);
+  imprimirTrazo(ctx, fractal, color, line_width);
+}
+
+/*Array can be reused from previous generation if width or color change*/
+function change_fractal(){
+  color = lineColorInput.value;
+  line_width = parseInt(lineWidthInput.value);
+  
+  cancelAnimationFrame(animationId); // Stop possible animation process
+  limpiarCanvas(ctx, canvas); // Clean canvas from previous strokes
+
+  center = draw_center(); // Draw center
+  imprimirTrazo(ctx, fractal, color, line_width);
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+}
+/* Moves the fractal when center is dragged, array is reused but changed */
+function move_fractal(){
+  cancelAnimationFrame(animationId); // Stop possible animation process
+  limpiarCanvas(ctx, canvas); // Reset transform to identity and wipe canvas
+
+  old_center = fractal.at(-1); // Last point of the array holds the previous center
+  dx = center.get_x() - old_center.get_x();
+  dy = center.get_y() - old_center.get_y();
+  trasladar_arr(fractal,dx,dy);
+
+  draw_center();
+  imprimirTrazo(ctx, fractal, color, line_width);
+}
+/*Rotates the fractal 90° with the center (last dot) as the hinge*/
+function rotate_fractal(){
+
+}
+function animate(){
+  speed = parseInt(speedInput.value); //Update speed value
+  
+  cancelAnimationFrame(animationId); // Stop possible animation process
+  limpiarCanvas(ctx, canvas); // Clean canvas from previous strokes
+
+  draw_center();
+  animarTrazo(ctx, fractal, color, line_width, speed);
+}
+
+bgColorInput.addEventListener("input", (e) => {
+    canvas.style.background = e.target.value; //Change background color
+    document.getElementById("togglePanel").style.color =
+    e.target.value > "#777777" ? "black" : "white"; //changes > toggle colour depending on the background
+});
+
+btnanimate.addEventListener("click", () => animate());
+btncancel.addEventListener("click", () => change_fractal()); // Draws the fractal in one go, nothing actually changes
+btnrotate.addEventListener("click", () => rotate_fractal());
+
+interationInput.addEventListener("input", () => make_fractal());
+lineLengthInput.addEventListener("input", () => make_fractal());
+
+lineWidthInput.addEventListener("input", () => change_fractal());
+lineColorInput.addEventListener("input", () => change_fractal());
+
+animate(); // When loading the page it starts animating the default fractal
+
+/*DRAGGABLE CENTER LOGIC*/
+function draw_center() {
     ctx.save();
-
     ctx.translate(canvas.width / 2, canvas.height / 2);
-
     ctx.beginPath();
     ctx.arc(
-        centro.get_x(),
-        centro.get_y(),
-        radioCentro,
+        center.get_x(),
+        center.get_y(),
+        radiocenter,
         0,
         Math.PI * 2
     );
     ctx.fillStyle = "red";
     ctx.fill();
-
     ctx.restore();
-
-    return centro;
-}
-function generarFractal(animar=0) {
-  // Obtain parameters set by user
-  const iteraciones = parseInt(interationInput.value);
-  const bgColor = bgColorInput.value;
-  const color = lineColorInput.value;
-  const largo_trazo = parseInt(lineLengthInput.value);
-  const ancho_trazo = parseInt(lineWidthInput.value);
-  const velocidad = parseInt(speedInput.value);
-
-  canvas.style.background = bgColor; // Set background colour
-  cancelAnimationFrame(animationId); // Stop possible animation process
-  limpiarCanvas(ctx, canvas); // Clean canvas from previous strokes
-
-  centro = dibujarCentro(); // Draw movable center
-
-  if (animar == 0)
-    imprimir_dragon(centro, canvas,ctx,iteraciones,largo_trazo,ancho_trazo,color);
-  else if(animar == 1)
-    dibujar_dragon(centro,canvas,ctx,iteraciones,largo_trazo,ancho_trazo,velocidad,color);
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    return center;
 }
 
-function changeCanvasColor(event){
-  canvas.style.background = event.target.value;
-}
 canvas.addEventListener("mousedown", (e) => {
 
   const rect = canvas.getBoundingClientRect();
@@ -279,12 +337,12 @@ canvas.addEventListener("mousedown", (e) => {
   const mouseX = e.clientX - rect.left - canvas.width / 2;
   const mouseY = e.clientY - rect.top  - canvas.height / 2;
 
-  const dx = mouseX - centro.get_x();
-  const dy = mouseY - centro.get_y();
+  const dx = mouseX - center.get_x();
+  const dy = mouseY - center.get_y();
 
   const distancia = Math.sqrt(dx * dx + dy * dy);
 
-  if (distancia <= radioCentro) {
+  if (distancia <= radiocenter) {
     dragging = true;
   }
 });
@@ -295,9 +353,9 @@ canvas.addEventListener("mousemove", (e) => {
 
   const rect = canvas.getBoundingClientRect();
 
-  centro.set_x(e.clientX - rect.left - canvas.width / 2);
-  centro.set_y(e.clientY - rect.top  - canvas.height / 2);
-  generarFractal(0);
+  center.set_x(e.clientX - rect.left - canvas.width / 2);
+  center.set_y(e.clientY - rect.top  - canvas.height / 2);
+  move_fractal(); // Center has changed
 });
 
 canvas.addEventListener("mouseup", () => {
@@ -307,23 +365,6 @@ canvas.addEventListener("mouseup", () => {
 canvas.addEventListener("mouseleave", () => {
   dragging = false;
 });
-
-bgColorInput.addEventListener("input", (e) => {
-    canvas.style.background = e.target.value;
-    document.getElementById("togglePanel").style.color =
-        parseInt(e.target.value.substring(1), 16) > 0x777777 ? "black" : "white"; //changes > toggle from white to black depending on the bg colour
-});
-
-btnanimate.addEventListener("click", () => generarFractal(1));
-btncancel.addEventListener("click", () => generarFractal(0));
-
-interationInput.addEventListener("input", () => generarFractal(0));
-lineLengthInput.addEventListener("input", () => generarFractal(0));
-lineWidthInput.addEventListener("input", () => generarFractal(0));
-lineColorInput.addEventListener("input", () => generarFractal(0));
-
-generarFractal(1); // When loading the page it defaults to animate
-
 </script>
 
 </body>

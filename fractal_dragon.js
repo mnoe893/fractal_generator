@@ -100,9 +100,8 @@ function trasladar_arr(puntos, dx, dy){
         p.set_y(p.get_y() + dy);
     }
 }
-// Crea el array de puntos
+// Creates the array of points for the given iterations, trace lenght and center
 function crear_dragon(canvas,ctx,iteraciones,largo_trazo,centro){
-
     let arr = inicializar(ctx, canvas, largo_trazo);
     // Generar iteraciones
     for(let i = 0; i < iteraciones; i++){
@@ -112,16 +111,18 @@ function crear_dragon(canvas,ctx,iteraciones,largo_trazo,centro){
     trasladar_arr(arr, centro.get_x(), centro.get_y());
     return arr;
 }
-function dibujar_dragon(centro,canvas,ctx,iteraciones,largo_trazo,ancho_trazo,velocidad,color) {
-    let arr = crear_dragon(canvas,ctx,iteraciones,largo_trazo,centro);
-    animarTrazo(ctx, arr, color, ancho_trazo, velocidad);
+// Moves the fractal when center is changed
+function move_dragon(canvas,ctx,arr,centro,ancho_trazo,color){
+  trasladar_arr(arr, centro.get_x(), centro.get_y());
+  imprimirTrazo(ctx, arr, color, ancho_trazo);
+  return arr;
 }
-function imprimir_dragon(centro,canvas,ctx,iteraciones,largo_trazo,ancho_trazo,color) {
+function rotar_dragon(centro,canvas,ctx,iteraciones,largo_trazo,ancho_trazo,color) {
+    console.log("rotar");
     let arr = crear_dragon(canvas,ctx,iteraciones,largo_trazo,centro);
+    arr = rotar_arr(arr);
     imprimirTrazo(ctx, arr, color, ancho_trazo);
 }
-
-
 // Elimina los puntos que esten muy lejos del canvas para evitar que un fractal
 // tarde mucho tiempo en llegar a ser visible
 function acotar_dragon_a_canvas(puntos, ancho, alto){
@@ -130,12 +131,13 @@ function acotar_dragon_a_canvas(puntos, ancho, alto){
 
   //y_min = -alto/2;
   y_max = alto/2 * 1.09;
+  /*
+  * HACER LOS VALORES DE MARGEN DIRECTAMENTE PROPORCIONALES AL LARGO DE LINEA
+  */
 
   for(let i = 0; i < puntos.length; i++){
-    console.log("ciclo: "+i);
     if(Math.abs(puntos[i].get_x()) > x_max || Math.abs(puntos[i].get_y()) > y_max){
       puntos.splice(i,1);
-      console.log("eliminado punto"+i);
     }
       
   }
@@ -146,26 +148,29 @@ function limpiarCanvas(ctx, canvas) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
+
 let animationId = null;
 
 function animarTrazo(ctx, puntos, color, strokeWidth, velocidad = 2) {
-  // Cancelar animación previa
+  let puntos_local = puntos.map(p => new Punto(p.get_x(), p.get_y())); //copy not reference, because of acotar_dragon_a_canvas()
+
   if (animationId) {
-    cancelAnimationFrame(animationId);
+    cancelAnimationFrame(animationId); // If animating, cancel it
   }
 
-  if (puntos.length < 2) return;
-  
+  if (puntos_local.length < 2) return; // Simple validation of the array
+
+  acotar_dragon_a_canvas(puntos_local, canvas.width, canvas.height); // Gets rid of dots outside of the window
+
   let i = 0;
   let t = 0;
-  // Elimina puntos lejanos a la pantalla para evitar que no se visualice la animacion
-  acotar_dragon_a_canvas(puntos, canvas.width, canvas.height);
+
   function animarSegmento() {
 
-    if (i >= puntos.length - 1) return;
+    if (i >= puntos_local.length - 1) return;
 
-    const p1 = puntos[i];
-    const p2 = puntos[i + 1];
+    const p1 = puntos_local[i];
+    const p2 = puntos_local[i + 1];
 
     const x = p1.get_x() + (p2.get_x() - p1.get_x()) * t;
     const y = p1.get_y() + (p2.get_y() - p1.get_y()) * t;
