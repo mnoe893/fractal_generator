@@ -126,22 +126,22 @@ function rotar_dragon(centro,canvas,ctx,iteraciones,largo_trazo,ancho_trazo,colo
 // Elimina los puntos que esten muy lejos del canvas para evitar que un fractal
 // tarde mucho tiempo en llegar a ser visible
 function acotar_dragon_a_canvas(puntos, ancho, alto){
-  //x_min = -ancho/2;
-  x_max = ancho/2 * 1.09; //Le doy un margen
+  let length = puntos[0].get_x() - puntos[1].get_x();
+  if(length !== 0){
+    length = Math.abs(length);
+  }
+  else{
+    length = Math.abs(puntos[0].get_y() - puntos[1].get_y());
+  }
 
-  //y_min = -alto/2;
-  y_max = alto/2 * 1.09;
+  x_max = ancho/2 + length;
+  y_max = alto/2 + length;
+  //console.log("xmax: "+x_max+"ymax: "+y_max);
   /*
   * HACER LOS VALORES DE MARGEN DIRECTAMENTE PROPORCIONALES AL LARGO DE LINEA
   */
 
-  for(let i = 0; i < puntos.length; i++){
-    if(Math.abs(puntos[i].get_x()) > x_max || Math.abs(puntos[i].get_y()) > y_max){
-      puntos.splice(i,1);
-    }
-      
-  }
-  return puntos;
+  return puntos.filter(p => Math.abs(p.get_x()) <= x_max && Math.abs(p.get_y()) <= y_max);
 }
 
 function limpiarCanvas(ctx, canvas) {
@@ -152,7 +152,7 @@ function limpiarCanvas(ctx, canvas) {
 let animationId = null;
 
 function animarTrazo(ctx, puntos, color, strokeWidth, velocidad = 2) {
-  let puntos_local = puntos.map(p => new Punto(p.get_x(), p.get_y())); //copy not reference, because of acotar_dragon_a_canvas()
+  let puntos_local = puntos.map(p => new Punto(p.get_x(), p.get_y())); //copy not reference, because of @cotar_dragon_a_canvas()
 
   if (animationId) {
     cancelAnimationFrame(animationId); // If animating, cancel it
@@ -160,8 +160,9 @@ function animarTrazo(ctx, puntos, color, strokeWidth, velocidad = 2) {
 
   if (puntos_local.length < 2) return; // Simple validation of the array
 
-  acotar_dragon_a_canvas(puntos_local, canvas.width, canvas.height); // Gets rid of dots outside of the window
-
+  puntos_local = acotar_dragon_a_canvas(puntos_local, canvas.width, canvas.height); // Gets rid of dots outside of the window
+  console.log("center: "+puntos_local.at(-1).get_x()+";"+puntos_local.at(-1).get_y());
+  console.log("largo"+puntos_local.length);
   let i = 0;
   let t = 0;
 
