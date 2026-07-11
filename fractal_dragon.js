@@ -66,24 +66,20 @@ function iterar_fractal(puntos){
 /*Podria utilizar rotar_punto*/
 function rotar_arr_horario(puntos){
     let centro = puntos.at(-1).copy();
-    console.log("centro antes x:"+centro.get_x());
     trasladar_arr(puntos, -centro.get_x(), -centro.get_y())
     for (let p of puntos){
       p.rotar_punto();
     }
     trasladar_arr(puntos, centro.get_x(), centro.get_y())
-    console.log("centro despues x:"+centro.get_x());
     return puntos;
 }
 function rotar_arr_antihorario(puntos){
     let centro = puntos.at(-1).copy();
-    console.log("centro antes x:"+centro.get_x());
     trasladar_arr(puntos, -centro.get_x(), -centro.get_y())
     for (let p of puntos){
       p.rotar_punto_anti();
     }
     trasladar_arr(puntos, centro.get_x(), centro.get_y())
-    console.log("centro despues x:"+centro.get_x());
     return puntos;
 }
 
@@ -172,8 +168,6 @@ function animarTrazo(ctx, puntos, color, strokeWidth, velocidad = 2) {
   if (puntos_local.length < 2) return; // Simple validation of the array
 
   puntos_local = acotar_dragon_a_canvas(puntos_local, canvas.width, canvas.height); // Gets rid of dots outside of the window
-  console.log("center: "+puntos_local.at(-1).get_x()+";"+puntos_local.at(-1).get_y());
-  console.log("largo"+puntos_local.length);
   let i = 0;
   let t = 0;
 
