@@ -20,6 +20,11 @@ class Punto {
     this.x = this.y;
     this.y = -buffer;
   }
+  rotar_punto_anti() {
+    let buffer = this.x;
+    this.x = -this.y;
+    this.y = buffer;
+  }
   copy() {
     return new Punto(this.x, this.y);
   }
@@ -58,10 +63,27 @@ function iterar_fractal(puntos){
 }
 
 // Rota todos mis puntos 90°
-function rotar_arr(puntos){
-    for (let p of puntos) //Roto el array copiado 90°
-    p.rotar_punto();
-
+/*Podria utilizar rotar_punto*/
+function rotar_arr_horario(puntos){
+    let centro = puntos.at(-1).copy();
+    console.log("centro antes x:"+centro.get_x());
+    trasladar_arr(puntos, -centro.get_x(), -centro.get_y())
+    for (let p of puntos){
+      p.rotar_punto();
+    }
+    trasladar_arr(puntos, centro.get_x(), centro.get_y())
+    console.log("centro despues x:"+centro.get_x());
+    return puntos;
+}
+function rotar_arr_antihorario(puntos){
+    let centro = puntos.at(-1).copy();
+    console.log("centro antes x:"+centro.get_x());
+    trasladar_arr(puntos, -centro.get_x(), -centro.get_y())
+    for (let p of puntos){
+      p.rotar_punto_anti();
+    }
+    trasladar_arr(puntos, centro.get_x(), centro.get_y())
+    console.log("centro despues x:"+centro.get_x());
     return puntos;
 }
 
@@ -117,12 +139,6 @@ function move_dragon(canvas,ctx,arr,centro,ancho_trazo,color){
   imprimirTrazo(ctx, arr, color, ancho_trazo);
   return arr;
 }
-function rotar_dragon(centro,canvas,ctx,iteraciones,largo_trazo,ancho_trazo,color) {
-    console.log("rotar");
-    let arr = crear_dragon(canvas,ctx,iteraciones,largo_trazo,centro);
-    arr = rotar_arr(arr);
-    imprimirTrazo(ctx, arr, color, ancho_trazo);
-}
 // Elimina los puntos que esten muy lejos del canvas para evitar que un fractal
 // tarde mucho tiempo en llegar a ser visible
 function acotar_dragon_a_canvas(puntos, ancho, alto){
@@ -133,13 +149,8 @@ function acotar_dragon_a_canvas(puntos, ancho, alto){
   else{
     length = Math.abs(puntos[0].get_y() - puntos[1].get_y());
   }
-
   x_max = ancho/2 + length;
   y_max = alto/2 + length;
-  //console.log("xmax: "+x_max+"ymax: "+y_max);
-  /*
-  * HACER LOS VALORES DE MARGEN DIRECTAMENTE PROPORCIONALES AL LARGO DE LINEA
-  */
 
   return puntos.filter(p => Math.abs(p.get_x()) <= x_max && Math.abs(p.get_y()) <= y_max);
 }

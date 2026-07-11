@@ -114,7 +114,9 @@
     button:hover {
       background: #676767;
     }
-
+    input[type="range"] {
+      accent-color: #585858; /* Replace with your color */
+    }
   </style>
 </head>
 
@@ -150,8 +152,16 @@
       </label>
       <label>
         Line width
-        <input type="range" id="lineWidth" min="0.3" max="5" value="2">
+        <input type="range" id="lineWidth" min="0.5" max="5" value="2">
       </label>
+      <div>
+        <button id="rotate_anticlockwise" style="width: 40%">
+          &#x21BB;
+        </button>
+        <button id="rotate_clockwise" style="width: 40%">
+          &#x21BA;
+        </button>
+      </div>
       <br>
       <label>
         Animation speed
@@ -163,11 +173,7 @@
         </button>
         <button id="cancel_animation" style="width: 40%">
           ✖
-        </button>
-        <button id="rotate" style="width: 40%">
-          &#x21BB;
-        </button>
-        
+        </button>        
       </div>
 
 
@@ -175,7 +181,7 @@
 
     <!-- FLECHA -->
     <button id="togglePanel">
-      <
+      &lt;
     </button>
 
   </div>
@@ -209,7 +215,8 @@
   const speedInput = document.getElementById("speed");
   const btnanimate = document.getElementById("animate");
   const btncancel = document.getElementById("cancel_animation");
-  const btnrotate = document.getElementById("rotate");
+  const btnrotateAnti = document.getElementById("rotate_anticlockwise");
+  const btnrotate = document.getElementById("rotate_clockwise");
   
   //PANEL
   const panel = document.getElementById("panelControles");
@@ -227,6 +234,7 @@
   let center = new Punto(0, 0);
   let dragging = false;
   const radiocenter = 10;
+  let center_color = 'red';
 
 /*FRACTAL POINTS ARRAY*/
 let iterations = parseInt(interationInput.value);
@@ -280,8 +288,18 @@ function move_fractal(){
   imprimirTrazo(ctx, fractal, color, line_width);
 }
 /*Rotates the fractal 90° with the center (last dot) as the hinge*/
-function rotate_fractal(){
+function rotate_fractal(clock=0){
+  if(clock == 0)
+    fractal = rotar_arr_horario(fractal);
+  else
+    fractal = rotar_arr_antihorario(fractal);
+  
+  cancelAnimationFrame(animationId); // Stop possible animation process
+  limpiarCanvas(ctx, canvas); // Clean canvas from previous strokes
 
+  center = draw_center(); // Draw center
+  imprimirTrazo(ctx, fractal, color, line_width);
+  ctx.translate(canvas.width / 2, canvas.height / 2);
 }
 function animate(){
   speed = parseInt(speedInput.value); //Update speed value
@@ -297,11 +315,32 @@ bgColorInput.addEventListener("input", (e) => {
     canvas.style.background = e.target.value; //Change background color
     document.getElementById("togglePanel").style.color =
     e.target.value > "#777777" ? "black" : "white"; //changes > toggle colour depending on the background
+
+    document.querySelectorAll('input[type="range"]').forEach(input => { //Change sliders color
+        const bg = getComputedStyle(input).backgroundColor;
+        input.style.accentColor = getComplementaryColor(e.target.value);
+    });
+    center_color = getComplementaryColor(e.target.value);
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.beginPath();
+    ctx.arc(
+        center.get_x(),
+        center.get_y(),
+        radiocenter,
+        0,
+        Math.PI * 2
+    );
+    ctx.fillStyle = center_color;
+    ctx.fill();
+    ctx.restore();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
 });
 
 btnanimate.addEventListener("click", () => animate());
 btncancel.addEventListener("click", () => change_fractal()); // Draws the fractal in one go, nothing actually changes
-btnrotate.addEventListener("click", () => rotate_fractal());
+btnrotate.addEventListener("click", () => rotate_fractal(0));
+btnrotateAnti.addEventListener("click", () => rotate_fractal(1));
 
 interationInput.addEventListener("input", () => make_fractal());
 lineLengthInput.addEventListener("input", () => make_fractal());
@@ -310,7 +349,6 @@ lineWidthInput.addEventListener("input", () => change_fractal());
 lineColorInput.addEventListener("input", () => change_fractal());
 
 animate(); // When loading the page it starts animating the default fractal
-
 /*DRAGGABLE CENTER LOGIC*/
 function draw_center() {
     ctx.save();
@@ -323,7 +361,7 @@ function draw_center() {
         0,
         Math.PI * 2
     );
-    ctx.fillStyle = "red";
+    ctx.fillStyle = center_color;
     ctx.fill();
     ctx.restore();
     ctx.translate(canvas.width / 2, canvas.height / 2);
@@ -365,6 +403,25 @@ canvas.addEventListener("mouseup", () => {
 canvas.addEventListener("mouseleave", () => {
   dragging = false;
 });
+
+function getComplementaryColor(color) {
+    // Remove the # symbol
+    const colorPart = color.slice(1);
+    
+    // Convert hex to decimal
+    const decimal = parseInt(colorPart, 16);
+    
+    // Calculate complement using bitwise operation
+    // (1 << 4 * colorPart.length) creates the maximum value for the bit length
+    let complement = ((1 << 4 * colorPart.length) - 1 - decimal).toString(16);
+    
+    // Pad with zeros if necessary
+    while (complement.length < colorPart.length) {
+        complement = '0' + complement;
+    }
+    
+    return '#' + complement;
+}
 </script>
 
 </body>
